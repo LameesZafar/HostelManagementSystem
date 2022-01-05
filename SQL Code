@@ -1,0 +1,580 @@
+create database HostelManagement;
+use  HostelManagement;
+CREATE TABLE IF NOT EXISTS person(
+CNIC bigint(13), 
+FName varchar(10),
+LName varchar(10),
+FatherName varchar(30),
+Address varchar (50),
+City varchar (20),
+DOB date,
+MobileNo char(11),
+PRIMARY KEY (CNIC)
+);
+
+CREATE TABLE IF NOT EXISTS Dept (
+DeptID int(1),
+DeptName varchar (6),
+PRIMARY KEY (DeptID),
+CONSTRAINT SchoolNames CHECK (DeptName in ("SEECS","SMME","SCME","NICE","S3H","NBS","SNS","ASAB","SADA","IGIS","IESE"))
+);
+
+create table IF NOT EXISTS Manager (
+ManagerID int(4),
+CNIC bigint (13),
+email varchar(30),
+primary key (ManagerID),
+FOREIGN KEY (CNIC) REFERENCES person(CNIC)
+);
+
+CREATE TABLE IF NOT EXISTS hostel (
+HID int(1),
+HostelName varchar (10),
+PhoneNo char (10),
+ManagerID int(4),
+PRIMARY KEY (HID),
+foreign key (ManagerID) references Manager(ManagerID));
+
+CREATE TABLE IF NOT EXISTS RoomRent(
+RoomType varchar(15),
+Rent int (4),
+Primary Key (RoomType),
+CONSTRAINT  BedsAllowed CHECK (RoomType in ("Single","Biseater","Triseater"))
+);
+
+CREATE TABLE IF NOT EXISTS Room  (
+RoomNo int (3),
+Floor_NO int (1) ,
+HostelID int(1),
+RoomType varchar (15),
+AvailableBeds int (1),
+constraint RoomID PRIMARY KEY (RoomNo,HostelID),
+FOREIGN KEY (RoomType) REFERENCES RoomRent(RoomType),
+FOREIGN KEY (HostelID) REFERENCES hostel(HID),
+CONSTRAINT AllowedRoomNo CHECK ((RoomNo >=101 AND RoomNo <=110 AND RoomType = "Single") OR (RoomNo >=201 AND RoomNo <=210  AND RoomType = "Biseater") OR
+                                (RoomNo >=301 AND RoomNo <=310 AND  RoomType = "Triseater") ),
+CONSTRAINT  AvailableBedsAllowed CHECK (AvailableBeds in ("0","1","2","3")));
+
+
+
+CREATE TABLE IF NOT EXISTS student(
+CNIC bigint(13),
+StudentID int (6),
+DepartmentID int (1),
+Email varchar(30),
+HostelID int(1),
+RoomNo int (3),
+Descipline varchar(30),
+PRIMARY KEY (StudentID), 
+foreign key (HostelID) references hostel(HID),
+FOREIGN KEY (CNIC) REFERENCES person(CNIC) ON DELETE CASCADE,
+foreign key (DepartmentID) references Dept(DeptID),
+Foreign key (RoomNo) references Room(RoomNo));
+
+
+
+
+CREATE TABLE IF NOT EXISTS staff(
+StaffID int(4),
+CNIC bigint (13),
+JobType varchar (20),
+Salary int(5),
+HostelID int(1), 
+PRIMARY KEY (StaffID,CNIC), 
+FOREIGN KEY (CNIC) REFERENCES person(CNIC) ON DELETE CASCADE,
+foreign key (HostelID) references hostel(HID));
+
+
+
+CREATE TABLE IF NOT EXISTS Complaint(
+ComplaintNo int(5) ,
+Description_ varchar (100),
+Cdate date,
+StudentID int(6),
+ComplaintStatus varchar(10),
+
+PRIMARY KEY (ComplaintNo),
+FOREIGN KEY (StudentID) REFERENCES student(StudentID) ON DELETE CASCADE,
+CONSTRAINT  ComplaintStatusAllowed CHECK (ComplaintStatus in ("Pending","Cleared")));
+
+
+
+
+
+CREATE TABLE IF NOT EXISTS RoomBills(
+AcademicSession varchar (10), 
+StudentID int(6),
+BillNo int(5),
+IssueDate date,
+DueDate date,
+RoomNo int(3),
+HostelID int(1),
+Paid char DEFAULT 'N',
+Amount int(4) default '0',
+primary key (BillNo),
+FOREIGN KEY (StudentID) REFERENCES student(StudentID) ON DELETE CASCADE,
+FOREIGN KEY (RoomNo) REFERENCES Room(RoomNo) ON DELETE CASCADE,
+FOREIGN KEY (HostelID) REFERENCES hostel(HID) ON DELETE CASCADE,
+CONSTRAINT Challan CHECK (Paid in ("N","Y")));
+
+
+CREATE TABLE IF NOT EXISTS Std_Attendance (
+Ddate date,
+StudentID int(6),
+sta_tus char DEFAULT 'P',
+FOREIGN KEY (StudentID) REFERENCES student(StudentID) ON DELETE CASCADE,
+CONSTRAINT pk_Attendance PRIMARY KEY (Ddate, StudentID),
+CONSTRAINT AllowedAttendSymbol CHECK (sta_tus in ("P","A")));
+
+CREATE TABLE IF NOT EXISTS Stf_Attendance (
+Ddate date,
+sta_tus char DEFAULT 'P',
+StaffID int (6),
+foreign key (StaffID) references staff(StaffID) on delete cascade,
+CONSTRAINT pk_Attendance PRIMARY KEY (Ddate, StaffID),
+CONSTRAINT AllowedStatusSymbol CHECK (sta_tus in ("P","A","L")));
+
+
+CREATE TABLE IF NOT EXISTS LaundryBill(
+LBillNo int (5) AUTO_INCREMENT,
+StudentID int (6) unique, 
+RoomNo int (3),
+IssueDate date,
+DueDate date,
+Amount int (4) DEFAULT '0',
+Paid char DEFAULT 'N',
+PRIMARY KEY (LBillNo),
+FOREIGN KEY (StudentID) REFERENCES student(StudentID)
+);
+
+CREATE TABLE IF NOT EXISTS MessBill (
+MBillNo int (5) AUTO_INCREMENT,
+StudentID int (6) unique,
+IssueDate date,
+DueDate date,
+Paid char DEFAULT 'N',
+Amount int (5) DEFAULT '4500',
+PRIMARY KEY (MBillNo),
+FOREIGN KEY (StudentID) REFERENCES student(StudentID) ON DELETE CASCADE);
+
+
+CREATE TABLE IF NOT EXISTS Transport (
+RegNo char(7),
+VehicleType varchar(15),
+StudentID int(6) unique,
+Foreign Key (StudentID) references student (StudentID));
+
+CREATE TABLE IF NOT EXISTS Visitors (
+VisitID int(3),
+VisitorName char(20),
+PhoneNumber char(11),
+Relation char(10),
+Cnic bigint(13),
+StudentID int (6),
+Primary key (VisitID),
+Foreign Key (StudentID) references student(StudentID));
+
+CREATE TABLE IF NOT EXISTS Timetable (
+StaffID int(6),
+StartTime time,
+EndTime time,
+Foreign Key (StaffID) references Staff(StaffID));
+
+CREATE TABLE audit(
+ID INT auto_increment,
+audit_data VARCHAR(500),
+primary key (ID)
+)
+
+
+# DATA INSERTION
+#----------------
+
+
+insert into person values
+(3630438148004, 'Lamees', 'Zafar', 'Zafar Hussain Javed', 'Johar Town', 'Multan', '2003-12-03', '03206033200'),
+(3130308968779, 'Abdullah', 'Abbasi', 'Baqa Muhammad Abbasi', 'Abbasia Town', 'Rahim Yar Khan', '2001-07-01', '03130677688'),
+(3130324075477, 'Manahil', 'Ashraf', 'Muhammad Ashraf', 'Model Town', 'Sargodha', '2003-06-12', '03219439502'),
+(3130184239482, 'Haris', 'Azaz', 'Ishtiyaq Hussain', 'Jinnah Town', 'Wah cantt', '2003-12-15', '0320603320'),
+(3130529492384, 'Dawood', 'Mehmood', 'Mehmood Ahmed', 'Dubai Town', 'Okara', '2003-03-25', '0320603320'),
+(3130332702873, 'Ali', 'Usman', 'Muhammad Usman', 'Jinnah Town', 'Rajan pur', '2003-06-06', '0320603320'),
+(3130308494724, 'Muhammad', 'Zafar', 'Zafar', 'Defence', 'Karachi', '2003-12-27', '0320603320'),
+(3130927599234, 'Baqar', 'Abbas', 'Muhammad Abbas', 'Township', 'Lahore', '2003-06-20', '0320603320'),
+(3103793847650, 'Munir', 'Ahmed', 'Ahmed Ali', 'Basti Amanat Ali', 'Faisalabad', '2003-01-30', '03334678467'),
+(3130290912971, 'Arbab', 'Muhammad', 'Muhammad Iqbal', 'Sattelite Town', 'Bahawalpur', '2002-10-14', '03006336776');
+
+insert into Dept values
+('1', 'SEECS'),
+('2', 'SADA'),
+('3', 'SCME'),
+('4', 'NICE'),
+('5', 'S3H'),
+('6', 'SMME'),
+('7', 'ASAB'),
+('8', 'SNS'),
+('9', 'NBS');
+
+insert into manager values
+(0001, 3103793847650, 'mahmed@gmail.com'),
+(0002, 3130290912971, 'amuhammad@gmail.com');
+
+insert into hostel values
+(1, 'Khadija', '0612345678', 0001), 
+(2, 'Ghhazali', '0593462354', 0002);
+
+insert into roomrent values
+('Single', '5500'),
+('Biseater', '5000'),
+('Triseater', '4000');
+
+insert into room values
+(101, 1, 1, 'Single', 1),
+(102, 1, 1, 'Single', 1),
+(103, 1, 1, 'Single', 1),
+(104, 1, 1, 'Single', 1),
+(105, 1, 1, 'Single', 1),
+(106, 1, 1, 'Single', 1),
+(107, 1, 1, 'Single', 1),
+(108, 1, 1, 'Single', 1),
+(109, 1, 1, 'Single', 1),
+(110, 1, 1, 'Single', 1),
+(201, 2, 1, 'Biseater', 1),
+(202, 2, 1, 'Biseater', 2),
+(203, 2, 1, 'Biseater', 2),
+(204, 2, 1, 'Biseater', 2),
+(205, 2, 1, 'Biseater', 1),
+(206, 2, 1, 'Biseater', 1),
+(207, 2, 1, 'Biseater', 2),
+(208, 2, 1, 'Biseater', 1),
+(209, 2, 1, 'Biseater', 1),
+(210, 2, 1, 'Biseater', 1),
+(301, 3, 1, 'Triseater', 1),
+(302, 3, 1, 'Triseater', 1),
+(303, 3, 1, 'Triseater', 2),
+(304, 3, 1, 'Triseater', 2),
+(305, 3, 1, 'Triseater', 3),
+(306, 3, 1, 'Triseater', 3),
+(307, 3, 1, 'Triseater', 2),
+(308, 3, 1, 'Triseater', 1),
+(309, 3, 1, 'Triseater', 1),
+(310, 3, 1, 'Triseater', 2),
+(101, 1, 2, 'Single', 1),
+(102, 1, 2, 'Single', 1),
+(103, 1, 2, 'Single', 1),
+(104, 1, 2, 'Single', 1),
+(105, 1, 2, 'Single', 1),
+(106, 1, 2, 'Single', 1),
+(107, 1, 2, 'Single', 1),
+(108, 1, 2, 'Single', 1),
+(109, 1, 2, 'Single', 1),
+(110, 1, 2, 'Single', 1),
+(201, 2, 2, 'Biseater', 1),
+(202, 2, 2, 'Biseater', 2),
+(203, 2, 2, 'Biseater', 2),
+(204, 2, 2, 'Biseater', 2),
+(205, 2, 2, 'Biseater', 1),
+(206, 2, 2, 'Biseater', 1),
+(207, 2, 2, 'Biseater', 2),
+(208, 2, 2, 'Biseater', 1),
+(209, 2, 2, 'Biseater', 1),
+(210, 2, 2, 'Biseater', 1),
+(301, 3, 2, 'Triseater', 1),
+(302, 3, 2, 'Triseater', 1),
+(303, 3, 2, 'Triseater', 2),
+(304, 3, 2, 'Triseater', 2),
+(305, 3, 2, 'Triseater', 3),
+(306, 3, 2, 'Triseater', 3),
+(307, 3, 2, 'Triseater', 2),
+(308, 3, 2, 'Triseater', 1),
+(309, 3, 2, 'Triseater', 1),
+(310, 3, 2, 'Triseater', 2);
+
+
+insert into student values
+(3630438148004, 314337, '1', 'lamees.bese20seecs@seecs', 1, 108, 'SE'),
+(3130324075477, 365488, '2', 'manahil.bese20seecs@seecs', 1, 204, 'CE'),
+(3130308968779, 339550, '3', 'abbasi.bese20seecs@seecs', 2, 101, 'CS'),
+(3130184239482, 327397, '3', 'haris.bese20seecs@seecs', 2, 306, 'ME');
+
+insert into staff values
+(0001, 3130529492384, 'Mess', 50000, 1),
+(0002, 3130332702873, 'Laundry', 20000, 1),
+(0003, 3130308494724, 'Mess', 50000, 2),
+(0004, 3130927599234, 'Sweeper', 25000, 2);
+
+
+----------------------------------------------------------------------
+insert into complaint values
+(00001, 'Mess menu is not good', '2021-12-12', 314337, 'pending'),
+(00002, 'There is no hot water even in Winter', '2021-12-11', 365488, 'Cleared');
+
+insert into RoomBills values
+('2021', 314337, 00123, '2021-12-21', '2021-12-31', 108, 1, 'Y', 5000),
+('2021', 339550, 00124, '2021-12-21', '2021-12-31', 101, 2, 'N', 5000),
+('2021', 365488, 00125, '2021-12-21', '2021-12-31', 204, 1, 'Y', 5000);
+
+insert into Std_Attendance values
+('2021-12-29', 314337, 'P'),
+('2021-12-29', 365488, 'A'),
+('2021-12-29', 339550, 'P'),
+('2021-12-29', 327397, 'P'),
+('2021-12-31', 314337, 'P'),
+('2021-12-31', 365488, 'A'),
+('2021-12-31', 339550, 'P'),
+('2021-12-31', 327397, 'P');
+
+
+insert into Stf_Attendance values
+('2021-12-29', 'A', 0001 ),
+('2021-12-29', 'P', 0002 ),
+('2021-12-29', 'A', 0003 ),
+('2021-12-29', 'A', 0004 ),
+('2021-12-30', 'A', 0001 ),
+('2021-12-30', 'P', 0002 ),
+('2021-12-30', 'A', 0003 ),
+('2021-12-30', 'A', 0004 );
+
+insert into Laundrybill values
+(00001, 314337, 108, '2021-12-12', '2021-12-18',500, 'N'),
+(00002, 339550, 101, '2021-12-12', '2021-12-18',555, 'Y'),
+(00003, 365488, 204, '2021-12-12', '2021-12-18',600, 'N');
+
+insert into Messbill values
+(00001, 314337, '2021-12-12', '2021-12-18','N', 5000),
+(00002, 339550, '2021-12-12', '2021-12-18','Y', 4500),
+(00003, 365488, '2021-12-12', '2021-12-18', 'N' , 3000);
+
+insert into transport values
+('MNB1234', 'Car', 314337 ),
+('MNB1235', 'Bike', 339550),
+('MNB1236', 'Car', 365488 );
+
+insert into visitors values
+(001, 'Ali', '03247597150','Brother', 3840377349516, 365488);
+
+insert into timetable values 
+(0001, '12:00:00','17:00:00'),
+(0002, '12:00:00','17:00:00'),
+(0003, '12:00:00','17:00:00');
+
+
+
+
+# VIEWS
+#----------------
+
+
+
+# Students View 
+
+#1 view to see all hostel info 
+
+create view HostelsInfo as
+select HostelName, PhoneNo, concat(p.FName," ",p.LName) as Manager
+from hostel h join manager m join person p
+where h.ManagerID = m.ManagerID and m.CNIC = p.CNIC;
+
+#2 View Attendance 
+
+create view StudentAttendance as
+SELECT Ddate AS 'Date',sta_tus
+FROM std_attendance
+WHERE studentid=314337;
+
+#3 View Latest Laundry Bill
+
+create view LaundaryBill as
+SELECT LBillNo, IssueDate, Duedate, Amount, paid
+FROM laundrybill
+WHERE studentid=314337;
+
+#4 View Latest mess Bill
+
+create view MessBillView as
+SELECT MBillNo, IssueDate, Duedate, Amount, paid
+FROM Messbill
+WHERE studentid=314337
+ORDER BY IssueDate DESC;
+
+
+#MANAGER'S VIEWS
+
+
+#1 Manager gets list of all students in his hostel
+
+create view StudentsInHostel as
+SELECT RoomNo,StudentId, fname as First_Name,lname as Last_Name 
+FROM person,student
+WHERE person.CNIC=student.CNIC
+AND student.HostelID ="1"
+ORDER BY student.roomNo;
+
+#2 Manager gets list of all staff in his hostel
+
+create view StaffInfo as
+SELECT fname as First_Name,lname as Last_Name, jobtype 
+FROM person,staff
+WHERE person.CNIC=staff.CNIC
+AND HostelID ="1"
+order by jobtype;
+
+#3 Manager gets list of available Rooms
+
+create view AvailableRooms as
+SELECT RoomNo,Floor_No
+FROM room
+WHERE AvailableBeds>=1 
+AND HostelID="1";
+
+#5 Manager gets list of students who are absent for 3 or more days
+
+create view AbsentStudents as
+SELECT distinct (s.studentid),p.Fname,p.Lname, s.RoomNo
+FROM person as p, student as s, std_attendance as ad
+WHERE p.CNIC=s.CNIC 
+AND s.studentid=ad.studentid
+AND s.HostelID="1"
+AND ad.studentid IN
+(SELECT a.studentid
+FROM std_attendance as a
+GROUP BY a.sta_tus
+HAVING Count(a.sta_tus)>=3 AND (a.sta_tus="A"));
+
+#6 Manager gets list of students who haven't paid their Room Challan yet
+
+create view nonPaidBills as
+SELECT s.studentid,p.Fname, p.Lname, s.RoomNo
+FROM person as p natural join student as s natural join roombills as r
+WHERE r.Paid = 'N'
+AND s.HostelID="1";
+
+
+#STAFF'S VIEWS
+
+#1 View Attendance 
+
+create view StaffAttendance as
+SELECT Ddate AS 'Date',sta_tus
+FROM stf_attendance
+WHERE staffID=1;
+
+#2 View TimeTable 
+
+create view TimeTableView as
+SELECT StartTime, EndTime
+FROM timetable
+WHERE staffID=1;
+
+
+
+# STORED PROCEDURES
+#------------------
+
+
+
+
+---------
+1-
+CREATE DEFINER=`root`@`localhost` PROCEDURE `add_student`(f_nm varchar(10),l_nm varchar(10), d_ob date, c_nic bigint, fa_nm varchar(30), addr varchar(50), ci_ty varchar (20), mobleNo char(11), StdID int(6), E_mail varchar(30), Dspline varchar(30), dpt_nm varchar(6),rom_no int,mg_id int)
+BEGIN
+declare ID VARCHAR(6);
+declare h_id int;
+declare dt date;
+set ID = (select DeptID from dept where DeptName = dpt_nm);
+set h_id = (select HID from hostel where ManagerID = mg_id);
+set dt = (SELECT curdate());
+	insert into person values(c_nic,f_nm,l_nm,fa_nm,addr,ci_ty,d_ob,mobleNo);
+    insert into student values(c_nic,StdID, ID , E_mail,h_id, rom_no, Dspline);
+    insert into Std_Attendance values(dt, StdID, 'P');
+END
+-----------
+2-
+CREATE DEFINER=`root`@`localhost` PROCEDURE `add_staff`(f_nm varchar(10),l_nm varchar(10), d_ob date, c_nic bigint, fa_nm varchar(30), addr varchar(50), ci_ty varchar (20), mobleNo char(11), StfID int(6), Job_Type varchar(20), Sal_ary int(5), mg_id int)
+BEGIN
+declare dt date;
+declare h_id int;
+set dt = (SELECT curdate());
+set h_id = (select HID from hostel where ManagerID = mg_id);
+	insert into person values(c_nic,f_nm,l_nm,fa_nm,addr,ci_ty,d_ob,mobleNo);
+    insert into staff values(StfID, c_nic, Job_Type,Sal_ary,h_id);
+    insert into Stf_Attendance values(dt,'P', StfID);
+END
+----------
+3-
+CREATE DEFINER=`root`@`localhost` PROCEDURE `view_student`(mgr_id int(4))
+BEGIN
+	select concat(FName,' ',LName) as Name_of_Student, student.StudentID, person.MobileNo, student.Email, person.City, Dept.DeptName
+    from person join student join  hostel join Dept
+    where person.CNIC=student.CNIC and student.hostelid= hostel.HID and hostel.ManagerID = mgr_id and student.DepartmentID = Dept.DeptID;
+END
+---------
+4-
+CREATE DEFINER=`root`@`localhost` PROCEDURE `view_staff`(mgr_id int(4))
+BEGIN
+	select concat(FName,' ',LName) as Name_of_Staff, StaffID, JobType, Salary,  person.MobileNo,person.City
+    from person join staff join  hostel 
+    where person.CNIC=staff.CNIC and staff.hostelid= hostel.HID and hostel.ManagerID = mgr_id ;
+END
+-----------
+5-
+CREATE DEFINER=`root`@`localhost` PROCEDURE `delete_student`(std_id int(6))
+BEGIN
+declare c_nic bigint(13);
+set c_nic = (select person.cnic from person join student where person.cnic = student.cnic and student.studentid=std_id );
+	delete from person where person.cnic = c_nic ;
+END
+----------
+6-
+CREATE DEFINER=`root`@`localhost` PROCEDURE `delete_staff`(stf_id int(6))
+BEGIN
+declare c_nic bigint(13);
+set c_nic = (select person.cnic from person join staff where person.cnic = staff.cnic and staff.StaffID=stf_id );
+	delete from person where person.cnic = c_nic ;
+END
+-----------
+7-
+CREATE DEFINER=`root`@`localhost` PROCEDURE `update_staff_salary`(stf_id int(6), sal_ry int(5))
+BEGIN
+	update staff set salary = sal_ry where StaffID = stf_id;
+END
+------------------
+8-
+CREATE DEFINER=`root`@`localhost` PROCEDURE `view_attendence`(dt date, mgr_id int(4))
+BEGIN
+	select concat(FName,' ',LName) as Name_of_Student, Std_Attendance.StudentID, Std_Attendance.sta_tus
+    from person join student join Std_Attendance join hostel
+    where person.cnic = student.cnic and student.StudentID = Std_Attendance.StudentID and student.hostelID = hostel.HID and hostel.ManagerID = mgr_id and Std_Attendance.Ddate = dt ;
+END
+------------------
+9-
+CREATE DEFINER=`root`@`localhost` PROCEDURE `view_today_attendence`(std_id int(6), mgr_id int(4))
+BEGIN
+	declare dt date;
+    set dt = (SELECT curdate());
+   
+    insert into Std_Attendance values(dt, (select StudentID from student join hostel where student.HostelId = hostel.HID and student.StudentID =std_id AND hostel.Managerid = mgr_id) , 'P');
+    
+	select concat(FName,' ',LName) as Name_of_Student, Std_Attendance.StudentID, Std_Attendance.sta_tus
+    from person join student join Std_Attendance join hostel
+    where person.cnic = student.cnic and student.studentID =Std_Attendance.studentID and  Std_Attendance.StudentID = std_id and student.hostelID = hostel.HID and hostel.ManagerID = mgr_id and Std_Attendance.Ddate = dt ;
+END
+---------------------
+10-
+CREATE DEFINER=`root`@`localhost` PROCEDURE `mark_absent`(std_id int(6),dt date)
+BEGIN
+	update Std_Attendance set sta_tus = 'A' where StudentID = std_id and Ddate = dt;
+END
+-------------------
+11-
+CREATE DEFINER=`root`@`localhost` PROCEDURE `transport_regstr`(std_id int(6), rg_no char(7), vehicle_type varchar(15))
+BEGIN
+	insert into Transport values (rg_no, vehicle_type, std_id);
+END
+---------------------
+12-
+CREATE DEFINER=`root`@`localhost` PROCEDURE `Transport_info`(mgr_id int(4))
+BEGIN
+	select transport.StudentID, concat(FName,' ',LName) as Name_of_Student, VehicleType, RegNo
+    from person join student join transport join hostel join manager
+    where person.cnic = student.cnic and student.StudentID = transport.StudentID and hostel.HID = student.hostelID  AND hostel.managerID = manager.managerID and hostel.managerID = mgr_id;
+END
